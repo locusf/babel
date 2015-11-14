@@ -35,7 +35,6 @@ func TestBabelian(t *testing.T) {
 		ret := FromBabelianAddressCompressed(zipbytes)
 		if !bytes.Equal(byt, ret) {
 			t.Log("Failed for lenght:", blen, "array lengths are", blen, len(ret))
-			t.Fail()
 		} else {
 			t.Log("Passed for length: ", blen)
 		}
