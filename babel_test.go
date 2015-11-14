@@ -17,32 +17,38 @@ package babel
 import (
 	"bytes"
 	"crypto/rand"
-	big "github.com/locusf/gmp"
 	"testing"
 )
 
+var lenghts = []int{300, 1000, 3200, 3238, 3239, 3250, 3300, 3400, 3500, 10000,
+				100000, 1000000, 32000000}
+
 func TestBabelian(t *testing.T) {
-	byt := make([]byte, 10)
-	_, err := rand.Read(byt)
-	if err != nil {
-		t.Log("Error: ", err)
-	}
-	z := big.NewInt(0)
-	z = z.SetBytes(byt)
-	z = z.Abs(z)
-	zipbytes := ToBabelianAddressCompressed(z.Bytes())
-	ret := FromBabelianAddressCompressed(zipbytes)
-	if !bytes.Equal(z.Bytes(), ret) {
-		t.Fail()
+	for _, blen := range lenghts {
+		byt := make([]byte, blen)
+		t.Log("Testing length", blen)
+		_, err := rand.Read(byt)
+		if err != nil {
+			t.Log("Error: ", err)
+		}
+		zipbytes := ToBabelianAddressCompressed(byt)
+		ret := FromBabelianAddressCompressed(zipbytes)
+		if !bytes.Equal(byt, ret) {
+			t.Log("Failed for lenght:", blen, "array lengths are", blen, len(ret))
+			t.Fail()
+		} else {
+			t.Log("Passed for length: ", blen)
+		}
 	}
 }
 func BenchmarkToBabelian(b *testing.B) {
+	blen := 1000000
 	byt := make([]byte, 1000000)
 	rand.Read(byt)
-	z := big.NewInt(0).SetBytes(byt)
-	zipbytes := ToBabelianAddressCompressed(z.Bytes())
+	zipbytes := ToBabelianAddressCompressed(byt)
 	ret := FromBabelianAddressCompressed(zipbytes)
-	if !bytes.Equal(ret, z.Bytes()) {
+	if !bytes.Equal(ret, byt) {
+		b.Log("Failed for lenght:", blen, "array lengths are", blen, len(ret))
 		b.Fail()
 	}
 }

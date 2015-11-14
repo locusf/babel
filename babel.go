@@ -19,7 +19,7 @@ import (
 	"compress/gzip"
 	"encoding/gob"
 	"fmt"
-	big "github.com/locusf/gmp"
+	big "github.com/ncw/gmp"
 	"math/rand"
 	"strings"
 	"time"
@@ -59,36 +59,17 @@ var tobabelreplacer = strings.NewReplacer(
 	"r", ".",
 )
 
-func substr(s []byte, from, length int) []byte {
-	//create array like string view
-	wb := make([][]byte, length)
-	wb = bytes.Split(s, []byte(""))
-
-	//miss nil pointer error
-	to := from + length
-
-	if to > len(wb) {
-		to = len(wb)
-	}
-
-	if from > len(wb) {
-		from = len(wb)
-	}
-
-	return bytes.Join(wb[from:to], []byte(""))
-}
-
 type Page struct {
 	Hex, Wall, Shelf, Volume, Page *big.Int
 }
 
 func ToBabelianAddressCompressed(input []byte) []byte {
-	inp := big.NewInt(0).SetBytes(input)
-	nonbabel := inp.Bytes()
+	nonbabel := bytes.NewBuffer(input)
 	var pages []Page
 	var blocks [][]byte
-	for i := 0; i < ((len(nonbabel) / 3239) + 1); i++ {
-		blocks = append(blocks, substr(nonbabel, i, i+3239))
+	var pagenum = int(float64(nonbabel.Len())/float64(3239)) + 1
+	for i := 0; i < pagenum; i++ {
+		blocks = append(blocks, nonbabel.Next(3239))
 	}
 	for _, subabel := range blocks {
 		wall := big.NewInt(0).Rand(seededRandom, big.NewInt(4))
@@ -137,7 +118,8 @@ func FromBabelianAddressCompressed(input []byte) []byte {
 		volume := pagestr.Volume
 		page := pagestr.Page
 		loc_int := big.NewInt(0).Add(page, big.NewInt(0).Add(volume, big.NewInt(0).Add(shelf, wall)))
-		key := big.NewInt(0).Sub(hex, big.NewInt(0).Mul(loc_int, loc_mult))
+		multed := big.NewInt(0).Mul(loc_int, loc_mult)
+		key := big.NewInt(0).Sub(hex, multed)
 		ret.Write(key.Bytes())
 	}
 	return ret.Bytes()
